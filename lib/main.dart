@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 
 void main() => runApp(MyApp());
 
@@ -59,6 +61,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
+
     // This method is rerun every time setState is called, for instance as done
     // by the _incrementCounter method above.
     //
@@ -92,14 +95,26 @@ class _MyHomePageState extends State<MyHomePage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             Text(
-              'You have pushed the button this many times:',
+              'You guys have pushed the button this many times:',
             ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.display1,
+
+            StreamBuilder<QuerySnapshot>(
+              stream: Firestore.instance.collection('counter').snapshots(),
+              builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
+                if (snapshot.hasError) return new Text('Error: ${snapshot.error}');
+                switch (snapshot.connectionState) {
+                  case ConnectionState.waiting: return new Text('Loading...');
+                  default:
+                    final counterDocument = snapshot.data.documents.where((document) => document.documentID == 'JvR8Z9KpSax98Tr9XvtX').first;
+                    return Text(
+                      counterDocument['count'].toString(),
+                      style: Theme.of(context).textTheme.display1,
+                  );
+                }
+              }
             ),
-          ],
-        ),
+          ]
+        )
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _incrementCounter,
@@ -108,4 +123,27 @@ class _MyHomePageState extends State<MyHomePage> {
       ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
+
+//  @override
+//  Widget build(BuildContext context) {
+//    return StreamBuilder<QuerySnapshot>(
+//      stream: Firestore.instance.collection('counter').snapshots(),
+//      builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
+//        if (snapshot.hasError)
+//          return new Text('Error: ${snapshot.error}');
+//        switch (snapshot.connectionState) {
+//          case ConnectionState.waiting: return new Text('Loading...');
+//          default:
+//            return new ListView(
+//              children: snapshot.data.documents.map((DocumentSnapshot document) {
+//                return new ListTile(
+//                  title: new Text(document['title']),
+//                  subtitle: new Text(document['author']),
+//                );
+//              }).toList(),
+//            );
+//        }
+//      },
+//    );
+//  }
 }
