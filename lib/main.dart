@@ -22,12 +22,12 @@ class MyApp extends StatelessWidget {
         // is not restarted.
         primarySwatch: Colors.blue,
       ),
-      home: MyHomePage(title: 'Flutter Demo Home Page'),
+      home: MyHomePage(title: 'Flutter TODO App Main Page'),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
+class MyHomePage extends StatelessWidget {
   MyHomePage({Key key, this.title}) : super(key: key);
 
   // This widget is the home page of your application. It is stateful, meaning
@@ -41,27 +41,22 @@ class MyHomePage extends StatefulWidget {
 
   final String title;
 
-  @override
-  _MyHomePageState createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+  static const String COUNT_DOCUMENT_ID = 'JvR8Z9KpSax98Tr9XvtX';
 
   void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
+    final DocumentReference postRef = Firestore.instance.document(
+        'counter/' + COUNT_DOCUMENT_ID);
+    Firestore.instance.runTransaction((Transaction tx) async {
+      DocumentSnapshot postSnapshot = await tx.get(postRef);
+      if (postSnapshot.exists) {
+        await tx.update(
+            postRef, <String, int>{'count': postSnapshot.data['count'] + 1});
+      }
     });
   }
 
   @override
   Widget build(BuildContext context) {
-
     // This method is rerun every time setState is called, for instance as done
     // by the _incrementCounter method above.
     //
@@ -72,46 +67,42 @@ class _MyHomePageState extends State<MyHomePage> {
       appBar: AppBar(
         // Here we take the value from the MyHomePage object that was created by
         // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
+        title: Text(title),
       ),
       body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
         child: Column(
-          // Column is also layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Invoke "debug painting" (press "p" in the console, choose the
-          // "Toggle Debug Paint" action from the Flutter Inspector in Android
-          // Studio, or the "Toggle Debug Paint" command in Visual Studio Code)
-          // to see the wireframe for each widget.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Text(
-              'You guys have pushed the button this many times:',
-            ),
-
-            StreamBuilder<QuerySnapshot>(
-              stream: Firestore.instance.collection('counter').snapshots(),
-              builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
-                if (snapshot.hasError) return new Text('Error: ${snapshot.error}');
-                switch (snapshot.connectionState) {
-                  case ConnectionState.waiting: return new Text('Loading...');
-                  default:
-                    final counterDocument = snapshot.data.documents.where((document) => document.documentID == 'JvR8Z9KpSax98Tr9XvtX').first;
-                    return Text(
-                      counterDocument['count'].toString(),
-                      style: Theme.of(context).textTheme.display1,
-                  );
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget> [
+              StreamBuilder<QuerySnapshot>(
+                stream: Firestore.instance.collection('counter').snapshots(),
+                builder: (BuildContext context,
+                    AsyncSnapshot<QuerySnapshot> snapshot) {
+                  if (snapshot.hasError)
+                    return new Text('Error: ${snapshot.error}');
+                  switch (snapshot.connectionState) {
+                    case ConnectionState.waiting:
+                      return new Text('Loading...');
+                    default:
+                      final counterDocument = snapshot.data.documents
+                          .where((document) =>
+                      document.documentID == COUNT_DOCUMENT_ID)
+                          .first;
+                      return Column(
+                          children: <Widget>[
+                            Text(
+                              'You guys have pushed the button this many times:',
+                            ),
+                            Text(
+                              counterDocument['count'].toString(),
+                              style: Theme
+                                  .of(context)
+                                  .textTheme
+                                  .display1,
+                            ),
+                          ]
+                      );
+                  }
                 }
-              }
             ),
           ]
         )
@@ -123,27 +114,4 @@ class _MyHomePageState extends State<MyHomePage> {
       ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
-
-//  @override
-//  Widget build(BuildContext context) {
-//    return StreamBuilder<QuerySnapshot>(
-//      stream: Firestore.instance.collection('counter').snapshots(),
-//      builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
-//        if (snapshot.hasError)
-//          return new Text('Error: ${snapshot.error}');
-//        switch (snapshot.connectionState) {
-//          case ConnectionState.waiting: return new Text('Loading...');
-//          default:
-//            return new ListView(
-//              children: snapshot.data.documents.map((DocumentSnapshot document) {
-//                return new ListTile(
-//                  title: new Text(document['title']),
-//                  subtitle: new Text(document['author']),
-//                );
-//              }).toList(),
-//            );
-//        }
-//      },
-//    );
-//  }
 }
